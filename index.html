@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>요로미 귀차니즘 레벨 테스트</title>
+<style>
+  :root{
+    --bg:#D4EAFF;        /* 바깥 배경 */
+    --card:#FFFFFF;      /* 프레임(카드) */
+    --ink:#2B2B33;
+    --accent:#BBD0FF;    /* 바깥배경보다 조금 진한 선 색 */
+    --btn:#111; --btnText:#fff;
+    --chip:#EDEFF6; --chipBorder:#D9DDEA; --chipSelected:#FFE7F1;
+  }
+  @font-face{
+    font-family:"Maplestory";
+    src:url("./MaplestoryOTF.otf") format("opentype");
+    font-display:swap;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Maplestory",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR","Malgun Gothic",Arial,sans-serif;
+    min-height:100dvh;display:flex;align-items:center;justify-content:center;
+  }
+  .wrap{width:100%;padding:20px;display:flex;justify-content:center}
+  /* 카드: 시작 버튼 포함 한 화면 */
+  .card{
+    width:525px; max-width:94vw;
+    aspect-ratio:525/560;
+    background:var(--card); border-radius:18px;
+    box-shadow:0 10px 28px rgba(0,0,0,.08);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  #stage{width:92%; height:92%; border-radius:14px}
+  #stage.noscroll{overflow:hidden}  /* 표지 */
+  #stage.scroll{overflow:auto}      /* 질문/결과 */
+
+  /* ===== 표지 ===== */
+  .cover{
+    height:100%;
+    display:flex; flex-direction:column;
+    justify-content:space-between; align-items:center;
+    text-align:center; padding:6px 0;
+  }
+  .tit{display:flex; flex-direction:column; gap:4px}
+  .tit h1{font-size:24px; margin:0}
+  .tit p{font-size:11px; margin:0; opacity:.7}
+
+  /* 테두리 선만 (보라) */
+  .cover-visual{
+    flex:1 1 auto; min-height:0;
+    width:100%; display:flex; align-items:center; justify-content:center;
+    border:3px solid var(--accent); border-radius:14px;
+    margin:6px 0; background:transparent;
+  }
+  .cover-visual img{max-height:92%; max-width:92%; height:auto}
+
+  .cover-desc{font-size:12px; opacity:.9}
+  .btn{
+    width:100%; padding:12px 14px; margin-top:4px;
+    background:var(--btn); color:var(--btnText);
+    border:0; border-radius:12px; font-weight:800; cursor:pointer;
+  }
+
+  /* ===== 질문 ===== */
+  .qbox{display:flex; flex-direction:column; gap:10px; height:100%}
+  .qtitle{font-size:24px; font-weight:900; line-height:1.28}
+  .opts{display:grid; gap:10px; margin-top:0}
+  .opt{
+    background:var(--chip); border:2px solid var(--chipBorder);
+    border-radius:12px; padding:16px 16px; text-align:left; cursor:pointer;
+    font-size:18px; transition:all .12s;
+  }
+  .opt:hover{filter:brightness(.98)}
+  .opt.selected{border-color:#FF9BC6; background:var(--chipSelected)}
+  .foot{margin-top:auto; display:flex; justify-content:space-between; align-items:center}
+  .progress{font-size:12px; opacity:.7}
+  .btn.secondary{background:#333; color:#fff; opacity:.95}
+  .btn.secondary:disabled{opacity:.4; cursor:not-allowed}
+
+  /* ===== 결과 ===== */
+  .result{display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center}
+  .result img{width:65%; max-width:320px; height:auto}
+  .caption{white-space:pre-line; line-height:1.5; font-size:14px}
+  .share{display:flex; gap:8px}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <section class="card"><div id="stage" class="noscroll"></div></section>
+  </div>
+
+<script>
+/* ===== 파일명 매핑 =====
+표지(첫번째 이미지): KakaoTalk_20251004_110955368_06.png
+
+결과 이미지:
+열정 만렙 쿠루: KakaoTalk_20251004_110955368_05.png
+요쿠 밸런스 팀: KakaoTalk_20251004_110955368_04.png
+요로미 관찰 단계: KakaoTalk_20251004_110955368_03.png
+요로미 견습생: KakaoTalk_20251004_110955368_01.png
+무념토끼(레전드): KakaoTalk_20251004_110955368.png
+============================================= */
+const IMG = {
+  cover: "KakaoTalk_20251004_110955368_06.png",
+  k_cat: "KakaoTalk_20251004_110955368_05.png",
+  y_balance: "KakaoTalk_20251004_110955368_04.png",
+  y_watch: "KakaoTalk_20251004_110955368_03.png",
+  y_apprentice: "KakaoTalk_20251004_110955368_01.png",
+  y_legend: "KakaoTalk_20251004_110955368.png",
+};
+
+const QUESTIONS = [
+  ["알람이 울리면?", ["A. 바로 일어난다",0], ["B. 5분만 더",1], ["C. 알람 친구가 5명",2]],
+  ["아침 식사", ["A. 꼬박 챙김",0], ["B. 가끔",1], ["C. 내 위는 ‘점심 전용’",2]],
+  ["세탁은 언제 돌려?", ["A. 바구니 50% 차면 바로",0], ["B. 80~100% 차면",1], ["C. 급하게 한꺼번에",2]],
+  ["설거지 타이밍", ["A. 바로",0], ["B. 한 끼 모아",1], ["C. 그릇이 노려봐야",2]],
+  ["만나는 날 당일", ["A. 이미 도착",0], ["B. 시간 딱 맞춰",1], ["C. 다음에 보자(진심 반)",2]],
+  ["약속 장소로 갈 때: 12분(환승2)·18분(무환승)·택시7분", ["A. 12분(환승2)",0], ["B. 18분(무환승)",1], ["C. 택시 7분",2]],
+  ["마감", ["A. D-2 완료",0], ["B. D-day 오전",1], ["C. 우주가 도와줘(기적판)",2]],
+  ["해야 할 일 목록", ["A. 상세 체크리스트",0], ["B. 뼈대만",1], ["C. 머릿속 대충(=증발)",2]],
+  ["운동", ["A. 주 3회 이상",0], ["B. 한 주에 한번",1], ["C. 하품 스트레칭",2]],
+  ["OTT 시청", ["A. 1회차만",0], ["B. 2~3화",1], ["C. 해 뜨는 엔딩",2]],
+  ["배달", ["A. 직접 요리 우선",0], ["B. 귀찮은 날만",1], ["C. 배달앱 VIP",2]],
+  ["장보기", ["A. 주간 리스트로 미리",0], ["B. 필요할 때만",1], ["C. 다 떨어진 뒤 급히",2]],
+];
+
+const RESULTS = [
+  {range:[0,5],  title:"🔥 ‘열정 만렙 쿠루’ (쿠루형: 추진력 만땅)", img:IMG.k_cat,
+    copy:"당신의 에너지는 태양광. 가끔 ‘느슨한 하루’도 허락해줘요.",
+    tips:"멈추지 마! 지금이 속도 낼 타이밍!\n✔ 새로운 프로젝트 시작, 운동 루틴 도전\n✔ 가벼운 산책으로 에너지 조절도 잊지 마요!\n(번아웃 조심—쿠루도 가끔은 쉰다구요🐱)"},
+  {range:[6,9],  title:"🌤️ ‘요쿠 밸런스 팀’ (중간밸런스)", img:IMG.y_balance,
+    copy:"움직일 땐 움직이고 쉴 땐 쉰다. 밸런스 장인.",
+    tips:"ON/OFF 스위치를 완벽하게 다루는 당신!\n✔ 타임테이블 짜기, 루틴 기록하기\n✔ 뽀짝한 자기관리템·다꾸 추천\n(상황 판단력 갑! 지금은 쉴 타이밍인가...?)"},
+  {range:[10,13],title:"🛋️ ‘요로미 관찰 단계’ (라이트 귀차니즘)", img:IMG.y_watch,
+    copy:"필요할 땐 움직이지만, 기본값은 소파!",
+    tips:"움직일까 말까 고민 중인 당신에게\n✔ 소파에서 할 수 있는 것 찾기(넷플·독서·그림)\n✔ 무엇이든 ‘가볍게 시작’이 핵심!\n(요로미 왈: “움직이는 건 내일도 가능해…”)"},
+  {range:[14,17],title:"🐾 ‘요로미 견습생’ (헤비 귀차니즘)", img:IMG.y_apprentice,
+    copy:"최소한의 움직임, 최대한의 효율을 추구 중.",
+    tips:"귀찮지만… 꼭 해야 한다면 최소한으로!\n✔ 침대 옆 책상에 오늘 할 일 미리 세팅\n✔ 동선 몰아쓰기(물 마시며 세탁기 돌리기)\n(“움직이되, 여러 번 움직이지 않는다.”)"},
+  {range:[18,24],title:"👑 ‘귀차니즘 지존 무념토끼’ (레전드)", img:IMG.y_legend,
+    copy:"움직이지 않는 것이야말로 진정한 지존의 자세.",
+    tips:"움직이지 않아도 되는 법을 이미 아는 자…\n✔ 하루 한 번은 자리에서 일어나기(의식적으로)\n✔ 창밖 보기 → 짧은 산책 ‘시뮬레이션’\n(“움직일 때를 정해두면, 더 오래 쉴 수 있다.”)"}
+];
+
+const stage = document.getElementById("stage");
+let state = { step:-1, scores:Array(QUESTIONS.length).fill(null) };
+
+renderCover();
+
+/* ===== 유틸 ===== */
+function setStageScroll(enabled){
+  stage.classList.toggle('noscroll', !enabled);
+  stage.classList.toggle('scroll', enabled);
+}
+
+/* ===== 화면 렌더 ===== */
+function renderCover(){
+  setStageScroll(false); // 표지: 스크롤 금지
+  stage.innerHTML = `
+    <div class="cover">
+      <div class="tit">
+        <h1>귀차니즘 레벨테스트</h1>
+        <p>COZY DAYS | Yoromi & Kuru</p>
+      </div>
+      <div class="cover-visual">
+        <img src="${IMG.cover}" alt="표지 이미지">
+      </div>
+      <div class="cover-desc"><b>당신의 귀차니즘 레벨은? 요로미형? VS 쿠루형?</b><br>12문항 · 1분 소요</div>
+      <button class="btn" id="start">시작하기</button>
+    </div>
+  `;
+  document.getElementById("start").onclick=()=>{ state.step=0; renderQuestion(); };
+}
+
+function renderQuestion(){
+  setStageScroll(true); // 질문: 스크롤 허용
+  const i = state.step;
+  const [title, ...opts] = QUESTIONS[i];
+  const saved = state.scores[i];
+
+  stage.innerHTML = `
+    <div class="qbox">
+      <div class="qtitle">Q${i+1}. ${title}</div>
+      <div class="opts" id="opts"></div>
+      <div class="foot">
+        <div class="progress">${i+1} / ${QUESTIONS.length}</div>
+        <div>
+          ${i>0 ? `<button class="btn secondary" id="prev">이전</button>` : ""}
+          <button class="btn secondary" id="next" disabled>다음</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  const box = document.getElementById("opts");
+  opts.forEach(([label,score])=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.textContent=label;
+    b.onclick=()=>{
+      [...box.children].forEach(x=>x.classList.remove("selected"));
+      b.classList.add("selected");
+      state.scores[i]=score;
+      document.getElementById("next").disabled=false;
+    };
+    if(saved!==null && saved===score){ b.classList.add("selected"); setTimeout(()=>document.getElementById("next").disabled=false,0); }
+    box.appendChild(b);
+  });
+
+  if(i>0) document.getElementById("prev").onclick=()=>{ state.step--; renderQuestion(); };
+  document.getElementById("next").onclick=()=>{
+    if(state.step<QUESTIONS.length-1){ state.step++; renderQuestion(); }
+    else renderResult();
+  };
+}
+
+function renderResult(){
+  setStageScroll(true); // 결과: 스크롤 허용
+  const total = state.scores.reduce((a,b)=>a+(b??0),0);
+  const b = RESULTS.find(r=> total>=r.range[0] && total<=r.range[1]);
+
+  stage.innerHTML = `
+    <div class="result">
+      <h2>${b.title}</h2>
+      <img src="${b.img}" alt="결과 이미지">
+      <div class="caption"><b>점수:</b> ${total}점\n\n<b>카피:</b> ${b.copy}\n\n<b>맞춤 추천</b>\n${b.tips}</div>
+      <div class="share">
+        <button class="btn" id="retry">다시 하기</button>
+        <button class="btn" id="copy">URL 복사</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("retry").onclick=()=>{ state={step:-1,scores:Array(QUESTIONS.length).fill(null)}; renderCover(); };
+  document.getElementById("copy").onclick=async()=>{
+    try{ await navigator.clipboard.writeText(location.href); alert("URL을 복사했어요!"); }
+    catch(_){ alert("복사 실패: 브라우저 권한을 확인해줘"); }
+  };
+}
+</script>
+</body>
+</html>
